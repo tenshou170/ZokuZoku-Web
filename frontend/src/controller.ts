@@ -32,13 +32,25 @@ export function initController() {
                 }, "*");
 
                 try {
+                    // Send default config first
+                    window.postMessage({
+                        type: "setConfig",
+                        config: {
+                            isStoryView: false, // Default to dialogue view
+                            fontSizeMultiplier: 1.0,
+                            lineSpacingMultiplier: 1.0,
+                            game_path: "", // Will be updated by UI
+                            use_decryption: false
+                        }
+                    }, "*");
+
                     const data = await api.extractStoryData(
-                        story.path, // asset_path
-                        story.id, // asset_name
-                        false, // use_decryption
-                        "", // meta_path (Not used yet/Auto-detect in backend?)
-                        "", // bundle_hash
-                        "" // meta_key
+                        story.path,
+                        story.id,
+                        false,
+                        "",
+                        "",
+                        ""
                     );
 
                     if (data.status === "error") {
@@ -58,13 +70,22 @@ export function initController() {
             case "init":
                 // Send initial config
                 window.postMessage({
+                    type: "setConfig",
+                    config: {
+                        isStoryView: false,
+                        fontSizeMultiplier: 1.0,
+                        lineSpacingMultiplier: 1.0,
+                        game_path: "",
+                        use_decryption: false
+                    }
+                }, "*");
+
+                window.postMessage({
                     type: "setExplorerTitle",
                     title: "Story (Loading...)"
                 }, "*");
 
                 try {
-                    // TODO: Get these from UI or Config
-                    // For now, we stub with a fake call to see if API works
                     const version = await api.checkVersion();
                     console.log("Backend Version:", version);
 
@@ -73,33 +94,61 @@ export function initController() {
                         return;
                     }
 
-                    // We cannot easily load a story without path resolution.
-                    // For the "Port Feasibility" check, getting the UI up and talking to backend is enough.
-                    // But to show *nodes*, we need data.
-
-                    // Let's create dummy nodes to prove it works
                     const dummyNodes = [
                         {
                             type: "entry",
                             id: 0,
                             name: "Mock Block 1",
-                            content: [{ content: "This is a mock data from Controller" }]
+                            content: [
+                                { content: "System" },
+                                { content: "This is a mock data from Controller" }
+                            ]
                         },
                         {
                             type: "entry",
                             id: 1,
                             name: "Mock Block 2",
-                            content: [{ content: "It proves the frontend is receiving data!" }]
+                            content: [
+                                { content: "Tazuna" },
+                                { content: "It proves the frontend is receiving data!" }
+                            ]
                         }
                     ];
 
+
+                    // Send setNodes
                     window.postMessage({ type: "setNodes", nodes: dummyNodes }, "*");
                     window.postMessage({ type: "setExplorerTitle", title: "Mock Story" }, "*");
+
+                    // Force select the first node to populate panels? 
+                    // Actually the Sidebar handles selection and triggers logic in utils.gotoNode
+                    // But for initial load we might want to auto-select?
+                    // Let's just trust user will click.
+                    // However, the issue is that if the user clicks, utils.gotoNode IS called.
+                    // Why is originalTextSlots empty?
+                    // Ah, the mocked data flow might be different.
+                    // In real app, `extractStoryData` returns nodes. user clicks node -> `gotoNode` -> sets stores.
+                    // If user clicked "Mock Block 1", `gotoNode` runs.
+
+                    // Let's debug by ensuring we have valid mock data structure matching what utils expects.
+                    // utils.gotoNode uses `node.content`.
+                    // The dummyNodes have `content: [{content: "System"}, ...]`.
+                    // This seems correct.
+
 
                 } catch (e) {
                     console.error(e);
                     window.postMessage({ type: "showMessage", content: "Failed to connect to backend" }, "*");
                 }
+                break;
+            case "setTextSlotContent":
+                // Echo back to update frontend stores (and other TextSlots)
+                window.postMessage({
+                    type: "setTextSlotContent",
+                    entryPath: message.entryPath,
+                    index: message.index,
+                    content: message.content
+                }, "*");
                 break;
         }
     });

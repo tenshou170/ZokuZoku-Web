@@ -54,6 +54,7 @@ workspaceState.subscribe(state => {
 /**** Session stores ****/
 
 export const currentTextSlots = writable<ITextSlot[]>([]);
+export const originalTextSlots = writable<ITextSlot[]>([]);
 export const currentNav = writable<{
     next?: TreeNodeId,
     prev?: TreeNodeId

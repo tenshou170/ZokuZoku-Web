@@ -1,6 +1,10 @@
 <script lang="ts">
     import TextSlot from "../lib/TextSlot.svelte";
-    import { currentPath, currentTextSlots } from "../stores";
+    import {
+        currentPath,
+        currentTextSlots,
+        originalTextSlots,
+    } from "../stores";
     import { translatedSlotProps } from "../utils";
     import DialogueTextFrameContent from "./DialogueTextFrameContent.svelte";
     import DialogueTextFrameName from "./DialogueTextFrameName.svelte";
@@ -9,16 +13,32 @@
 </script>
 
 <div class="text-frame">
-    {#if $currentTextSlots.length >= 2}
-        {#if translated}
-            <TextSlot inner={DialogueTextFrameName} {...translatedSlotProps($currentTextSlots[0])}
-                index={0} entryPath={$currentPath} />
-            <TextSlot inner={DialogueTextFrameContent} {...translatedSlotProps($currentTextSlots[1])}
-                index={1} entryPath={$currentPath} />
-        {:else}
-            <TextSlot inner={DialogueTextFrameName} readonly {...$currentTextSlots[0]} />
-            <TextSlot inner={DialogueTextFrameContent} readonly {...$currentTextSlots[1]}/>
+    {#if translated}
+        {#if $currentTextSlots.length >= 2}
+            <TextSlot
+                inner={DialogueTextFrameName}
+                {...translatedSlotProps($currentTextSlots[0])}
+                index={0}
+                entryPath={$currentPath}
+            />
+            <TextSlot
+                inner={DialogueTextFrameContent}
+                {...translatedSlotProps($currentTextSlots[1])}
+                index={1}
+                entryPath={$currentPath}
+            />
         {/if}
+    {:else if $originalTextSlots.length >= 2}
+        <TextSlot
+            inner={DialogueTextFrameName}
+            readonly
+            {...$originalTextSlots[0]}
+        />
+        <TextSlot
+            inner={DialogueTextFrameContent}
+            readonly
+            {...$originalTextSlots[1]}
+        />
     {/if}
 </div>
 

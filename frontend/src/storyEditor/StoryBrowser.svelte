@@ -17,9 +17,9 @@
         try {
             const res = await api.getGameStories(manualPath);
             stories = res.stories;
+            if (!config) config = {};
+            config.game_path = manualPath; // Update display
             error = null;
-            // Persist valid path to config if possible, or just local state?
-            // Ideally backend would remember, but for now just using it for this session.
         } catch (e: any) {
             error = e.message;
         } finally {

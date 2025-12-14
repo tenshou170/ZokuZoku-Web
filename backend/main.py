@@ -56,6 +56,50 @@ def query_db(req: QueryDbRequest):
 @app.post("/extract_story_data")
 def extract_story_data(req: ExtractStoryRequest):
     try:
+        # Handle native path resolution
+        if req.asset_path.startswith("native://"):
+            story_id = req.asset_path.replace("native://", "")
+            
+            # Find game path again (needed for resolution)
+            game_path = utils.find_game_install_path() 
+            if not game_path:
+                 # Try to deduce from meta_path if provided, else fail
+                 if req.meta_path and os.path.exists(req.meta_path):
+                     game_path = os.path.dirname(req.meta_path) # meta is in Persistent/ or root?
+                     # meta path usually: .../Persistent/meta
+                     if os.path.basename(game_path) == "Persistent":
+                         pass # game_path is correct (Persistent dir)
+                     elif os.path.exists(os.path.join(game_path, "Persistent")):
+                         game_path = os.path.join(game_path, "Persistent")
+
+            if not game_path:
+                raise HTTPException(status_code=400, detail="Cannot resolve native ID without game path.")
+
+            # Resolve
+            resolved = utils.resolve_story_path(game_path, story_id)
+            if not resolved:
+                raise HTTPException(status_code=404, detail=f"Could not find native asset for ID {story_id}")
+            
+            # Override request params with resolved values
+            req.asset_path = resolved["path"]
+            req.asset_name = resolved["name"]
+            req.bundle_hash = resolved["hash"]
+            req.use_decryption = True
+            
+            # Ensure meta_path is set (py_bridge needs it for keys)
+            if not req.meta_path or not os.path.exists(req.meta_path):
+                # Auto-detect meta path
+                meta = os.path.join(game_path, "meta")
+                if not os.path.exists(meta): 
+                     # Try .../Persistent/meta if game_path was root
+                     meta_alt = os.path.join(game_path, "UmamusumePrettyDerby_Jpn_Data", "Persistent", "meta")
+                     if os.path.exists(meta_alt): meta = meta_alt
+                
+                if os.path.exists(meta):
+                    req.meta_path = meta
+                else:
+                    raise HTTPException(status_code=500, detail="Meta file not found for decryption")
+
         params = req.dict()
         return py_bridge.handle_extract_story_data(params)
     except Exception as e:
@@ -98,13 +142,15 @@ def get_game_stories(req: dict):
     Scans for stories in the provided or detected game path.
     Payload: {"path": optional_override_path}
     """
+    
     path = req.get("path")
-    if not path:
-        path = utils.find_game_install_path()
     
     if not path:
+        path = utils.find_game_install_path()
+        
+    if not path:
          raise HTTPException(status_code=404, detail="Game path not found")
-         
+
     story_dir = utils.find_story_data_dir(path)
     if not story_dir:
         raise HTTPException(status_code=404, detail="Story data directory not found")

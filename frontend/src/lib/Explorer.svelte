@@ -17,6 +17,7 @@
         currentPath,
         currentSiblings,
         currentTextSlots,
+        originalTextSlots,
         explorerScrollTop,
         selectedNodes,
     } from "../stores";
@@ -57,6 +58,9 @@
                     nodes,
                 ) || [null, null];
                 if (currentNode && currentNode.type == "entry") {
+                    $originalTextSlots = JSON.parse(
+                        JSON.stringify(currentNode.content),
+                    );
                     $currentTextSlots = currentNode.content;
                     $currentNav = {
                         next: currentNode.next,
@@ -254,6 +258,13 @@
 
     let actions: IPanelAction[];
     $: actions = [
+        {
+            icon: "arrow-left",
+            tooltip: "Back to Browser",
+            onClick: () => {
+                window.postMessage({ type: "backToBrowser" }, "*");
+            },
+        },
         {
             icon: "copy",
             tooltip: "Copy",

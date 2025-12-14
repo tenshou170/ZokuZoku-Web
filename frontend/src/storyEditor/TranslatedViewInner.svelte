@@ -8,17 +8,18 @@
     import { translatedPreview } from "./stores";
 
     const preview = translatedPreview;
-    export const actions: IPanelAction[] = [
+    export let actions: IPanelAction[] = [
         {
             icon: "comment",
             tooltip: "Dialogue preview",
-            onClick: () => $preview = $preview == "dialogue" ? null : "dialogue"
+            onClick: () =>
+                ($preview = $preview == "dialogue" ? null : "dialogue"),
         },
         {
             icon: "book",
             tooltip: "Story preview",
-            onClick: () => $preview = $preview == "story" ? null : "story"
-        }
+            onClick: () => ($preview = $preview == "story" ? null : "story"),
+        },
     ];
 
     const placeholder = "Type your translation here...";
@@ -26,10 +27,13 @@
 
 <StorySplitView preview={$preview} translated>
     <GenericSlots>
-        {#key $currentTextSlots}
-            {#each $currentTextSlots as slot, index}
-                <TextSlot {...translatedSlotProps(slot)} {index} entryPath={$currentPath} {placeholder} />
-            {/each}
-        {/key}
+        {#each $currentTextSlots as slot, index}
+            <TextSlot
+                {...translatedSlotProps(slot)}
+                {index}
+                entryPath={$currentPath}
+                {placeholder}
+            />
+        {/each}
     </GenericSlots>
 </StorySplitView>

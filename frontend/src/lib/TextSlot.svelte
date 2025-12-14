@@ -54,6 +54,11 @@
     let prevPostedContent = content;
 
     let onMessage: ((e: MessageEvent<ControllerMessage>) => void) | undefined;
+    // Only listen if content is not provided (meaning it's managed via messages)
+    // Or if explicitly undefined which is effectively nullish here?
+    // Edge checks strict `content === null`. But `undefined` default prop value is `null`?
+    // No, `export let content: string | null = null;` means default is null.
+    // If we pass `undefined`, it uses default `null`.
     if (content === null) {
         onMessage = (e) => {
             const message: ControllerMessage = e.data;

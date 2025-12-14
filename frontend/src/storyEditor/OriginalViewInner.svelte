@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { currentPath, currentTextSlots } from "../stores";
+    import { currentPath, originalTextSlots } from "../stores";
     import type { IPanelAction } from "../types";
     import TextSlot from "../lib/TextSlot.svelte";
     import GenericSlots from "../lib/GenericSlots.svelte";
@@ -8,7 +8,7 @@
     import { postMessageToController } from "../messageBus";
 
     const preview = originalPreview;
-    export const actions: (IPanelAction | null)[] = [
+    export let actions: (IPanelAction | null)[] = [
         {
             icon: "run-all",
             tooltip: "Goto block (IPC - in game)",
@@ -49,7 +49,7 @@
 
 <StorySplitView preview={$preview}>
     <GenericSlots>
-        {#each $currentTextSlots as slot}
+        {#each $originalTextSlots as slot}
             <TextSlot readonly {...slot} />
         {/each}
     </GenericSlots>

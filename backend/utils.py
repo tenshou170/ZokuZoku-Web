@@ -67,57 +67,76 @@ def list_stories(story_base_dir):
     
     # Check for native Game structure
     # Expected: .../Persistent/master/master.mdb
-    master_path = os.path.join(story_base_dir, "master", "master.mdb")
+    # 1. Native Structure: master.mdb
+    # Try multiple locations for master.mdb
+    master_candidates = [
+        os.path.join(story_base_dir, "master", "master.mdb"),
+        os.path.join(story_base_dir, "master.mdb")
+    ]
     
-    if os.path.exists(master_path):
-        # We need to query the DB for story timeline entries
-        # This requires APSW which is in our requirements.
-        # We can use py_bridge logic to query it.
+    master_path = None
+    for p in master_candidates:
+        if os.path.exists(p):
+            master_path = p
+            break
+            
+    if master_path:
         import py_bridge
         
-        # Query to find main story chapters (simplistic example)
-        # story_data table usually contains the mapping.
-        # Let's try to find stories from `text_data` or `story_timeline` related tables?
-        # Actually proper logic is complex. For a "Shell", let's just list what we can cheaply.
-        # But if we can't query, we can't list.
-        
-        # Fallback: Just look for 'storytimeline' in the `dat` if they are unpacked?
-        # No, they are hashed.
-        
-        try:
-            # Query MAIN STORIES
-            # Table: main_story_data
-            # Columns: story_id_1 (Timeline ID), part_id (Group), story_number, id (Episode ID)
-            # We filter for story_id_1 > 0 to get actual story scripts.
-            res = py_bridge.handle_query_db({
-                "db_path": master_path,
-                "query": "SELECT story_id_1, part_id, story_number, id FROM main_story_data WHERE story_id_1 > 0 LIMIT 200", 
-                "key": None
-            })
-            
-            # If successful, parse rows
-            if res and 'rows' in res:
-                for row in res['rows']:
-                    # row: [story_id_1, part_id, story_number, episode_id]
-                    story_id = str(row[0])
-                    part_id = str(row[1])
-                    episode_id = str(row[3])
-                    
-                    stories.append({
-                        "id": story_id,
-                        "path": f"native://{story_id}", # Placeholder for native loading
-                        "rel_path": f"Main/Part{part_id}/Ep{episode_id}",
-                        "category": "Main",
-                        "group": f"Part {part_id}"
-                    })
-        except Exception as e:
-            print(f"Failed to query master.mdb: {e}")
-            # Silently fail or log, don't break the UI with error items for now? 
-            # Or keep error item if really busted.
-            # Let's just print to console, as we want to fallback to glob if this fails.
+        # Helper to safely query and append
+        def query_and_append(query, category_func, group_func, label_prefix=""):
+            try:
+                res = py_bridge.handle_query_db({
+                    "db_path": master_path,
+                    "query": query,
+                    "key": None
+                })
+                if res and 'rows' in res:
+                    for row in res['rows']:
+                        # Expecting row[0] to be the Story ID (text_id/story_id_1)
+                        story_id = str(row[0])
+                        if not story_id or story_id == "0": continue
+                        
+                        stories.append({
+                            "id": story_id,
+                            "path": f"native://{story_id}", 
+                            "rel_path": f"{label_prefix}{story_id}", # Display helper
+                            "category": category_func(row),
+                            "group": group_func(row)
+                        })
+            except Exception as e:
+                print(f"Query failed: {query[:30]}... {e}")
 
-            
-    # Also continue to glob for JSONs (extracted mode)
+        # A. Main Story
+        # SELECT story_id_1, part_id, story_number, id FROM main_story_data WHERE story_id_1 > 0
+        query_and_append(
+            "SELECT story_id_1, part_id, story_number, id FROM main_story_data WHERE story_id_1 > 0 LIMIT 500",
+            lambda r: "Main Story",
+            lambda r: f"Part {r[1]}"
+        )
+
+        # B. Event Story
+        # SELECT story_id_1, story_event_id, episode_index_id FROM story_event_story_data WHERE story_id_1 > 0
+        query_and_append(
+            "SELECT story_id_1, story_event_id, episode_index_id FROM story_event_story_data WHERE story_id_1 > 0 LIMIT 500",
+            lambda r: "Event Story",
+            lambda r: f"Event {r[1]}"
+        )
+        
+        # C. Chara Story
+        # SELECT story_id, chara_id, episode_index FROM chara_story_data WHERE story_id > 0
+        # Note: Column names might vary, guessing standard 'chara_id' and 'episode_index' based on pattern.
+        # If this fails, it just won't list chara stories.
+        try:
+             query_and_append(
+                "SELECT story_id, chara_id, episode_index FROM chara_story_data WHERE story_id > 0 LIMIT 500",
+                lambda r: "Character Story",
+                lambda r: f"Chara {r[1]}"
+            )
+        except:
+            pass
+
+    # 2. Extracted Structure (Keep legacy support)
     search_pattern = os.path.join(story_base_dir, "**", "storytimeline_*.json")
     files = glob.glob(search_pattern, recursive=True)
     
@@ -140,3 +159,52 @@ def list_stories(story_base_dir):
             })
             
     return stories
+
+def resolve_story_path(game_path, story_id):
+    """
+    Resolves a Story ID to a physical file path (hashed bundle) using the meta database.
+    """
+    meta_path = os.path.join(game_path, "meta")
+    if not os.path.exists(meta_path):
+        # Flattened/extracted structure check
+        meta_path = os.path.join(game_path, "UmamusumePrettyDerby_Jpn_Data", "Persistent", "meta")
+        
+    if os.path.exists(meta_path):
+        import py_bridge
+        try:
+            # We need to find the hash 'h' for the asset named '.../storytimeline_{story_id}'
+            # The name 'n' in table 'a' looks like: story/data/main/01/0001/storytimeline_20002001.asset (or .unity3d?)
+            # We can use LIKE to match the ID.
+            query = f"SELECT n, h FROM a WHERE n LIKE '%storytimeline_{story_id}.%'"
+            
+            res = py_bridge.handle_query_db({
+                "db_path": meta_path,
+                "query": query,
+                "key": None
+            })
+            
+            if res and 'rows' in res and len(res['rows']) > 0:
+                # row: [name, hash]
+                asset_name = res['rows'][0][0]
+                file_hash = res['rows'][0][1] # Hash string
+                
+                # The file is located at dat/{hash[:2]}/{hash}
+                blob_path = os.path.join(game_path, "dat", file_hash[:2], file_hash)
+                
+                # Verify it exists
+                if not os.path.exists(blob_path):
+                    # Check nested structure
+                    blob_path = os.path.join(game_path, "UmamusumePrettyDerby_Jpn_Data", "Persistent", "dat", file_hash[:2], file_hash)
+                    
+                if os.path.exists(blob_path):
+                    return {
+                        "path": blob_path,
+                        "name": asset_name,
+                        "hash": file_hash
+                    }
+                    
+        except Exception as e:
+            print(f"Failed to resolve hash for {story_id}: {e}")
+            
+    return None
+

@@ -10,6 +10,7 @@
         currentPath,
         currentSiblings,
         currentTextSlots,
+        originalTextSlots,
         nodeStates,
         selectedNodes,
         type NodeState,
@@ -99,6 +100,10 @@
 
             $selectedNodes[pathStr] = node.content.length;
             $currentPath = path;
+
+            // Deep copy to originalTextSlots
+            $originalTextSlots = JSON.parse(JSON.stringify(node.content));
+
             $currentTextSlots = node.content;
             $currentNav = {
                 next: node.next,
@@ -277,6 +282,7 @@
 
     .tree-node:hover {
         background-color: var(--vscode-list-hoverBackground);
+        color: #ffffff;
     }
 
     .tree-node.selected {
@@ -284,23 +290,27 @@
     }
 
     .tree-node.focus,
-    .tree-node.current.focus {
+    .tree-node.current.focus,
+    .tree-node.selected {
+        /* selected also gets background, maybe differ if focused? */
         background-color: var(--vscode-list-activeSelectionBackground);
         color: var(--vscode-list-activeSelectionForeground);
     }
 
+    /* Refine logic: 
+       selected = selected in data model 
+       focus = keyboard focus or clicked 
+    */
+
+    .tree-node.selected {
+        background-color: var(--vscode-list-inactiveSelectionBackground);
+        color: var(--vscode-list-activeSelectionForeground);
+    }
+
     .tree-node.focus {
+        background-color: var(--vscode-list-activeSelectionBackground);
+        color: var(--vscode-list-activeSelectionForeground);
         border: 1px solid var(--vscode-list-focusOutline);
-    }
-
-    .tree-node.selected.noContent,
-    .tree-node.focus.noContent {
-        color: #8c8c8c;
-    }
-
-    .tree-node.copying,
-    .tree-node.focus.copying {
-        border: 1px dashed var(--vscode-list-focusOutline);
     }
 
     .node-name {

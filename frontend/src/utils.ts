@@ -1,5 +1,5 @@
 import type { ControllerMessage, ITextSlot, ITreeNode, TreeNodeId } from "./sharedTypes";
-import { currentNav, currentPath, currentTextSlots, selectedNodes } from "./stores";
+import { currentNav, currentPath, currentTextSlots, originalTextSlots, selectedNodes } from "./stores";
 import { postMessageToController } from "./messageBus";
 
 export function findNodeByPath(path: TreeNodeId[], nodes: ITreeNode[]): [ITreeNode, ITreeNode[]] | null {
@@ -53,6 +53,11 @@ export function gotoNode(node: ITreeNode, path: TreeNodeId[]) {
     if (node.type != "entry") return;
     selectedNodes.update(() => ({ [path.join("/")]: node.content.length }));
     currentPath.update(() => path);
+
+    // Deep copy content to originalTextSlots to prevent reference sharing
+    const contentCopy = JSON.parse(JSON.stringify(node.content));
+    originalTextSlots.set(contentCopy);
+
     currentTextSlots.update(() => node.content);
     currentNav.update(() => ({
         next: node.next,
