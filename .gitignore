@@ -1,0 +1,37 @@
+# General
+.DS_Store
+.base_dir
+.env
+.idea/
+.vscode/
+*.log
+tmp/
+dist/
+
+# Python / Backend
+backend/__pycache__/
+backend/*.py[cod]
+backend/*$py.class
+backend/venv/
+backend/.venv/
+backend/env/
+backend/.pytest_cache/
+backend/.coverage
+backend/htmlcov/
+*.sqlite
+*.db
+
+# Node / Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.svelte-kit/
+frontend/build/
+frontend/.npmrc
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local

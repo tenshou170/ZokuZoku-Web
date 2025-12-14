@@ -1,0 +1,58 @@
+:root, body, #app {
+    width: 100%;
+    height: 100%;
+}
+
+body {
+    /* VSCode Theme Compatibility Layer */
+    --vscode-foreground: #cccccc;
+    --vscode-editor-background: #1e1e1e;
+    --vscode-editor-foreground: #d4d4d4;
+    --vscode-list-hoverBackground: #2a2d2e;
+    --vscode-list-activeSelectionBackground: #37373d;
+    --vscode-list-activeSelectionForeground: #ffffff;
+    --vscode-list-inactiveSelectionBackground: #37373d;
+    --vscode-list-focusOutline: #007fd4;
+    --vscode-tree-indentGuidesStroke: #585858;
+    --vscode-tree-inactiveIndentGuidesStroke: #58585866;
+    --vscode-input-background: #3c3c3c;
+    --vscode-input-foreground: #cccccc;
+    --vscode-input-placeholderForeground: #a6a6a6;
+    --vscode-focusBorder: #007fd4;
+    --vscode-button-background: #0e639c;
+    --vscode-button-foreground: #ffffff;
+    --vscode-button-hoverBackground: #1177bb;
+    --vscode-button-border: transparent;
+    --vscode-sash-hoverBorder: #007fd4;
+    --vscode-widget-shadow: #000000;
+    --vscode-editorWidget-background: #252526;
+    --vscode-font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --vscode-editorLink-activeForeground: #4e94ce;
+
+    font-family: var(--vscode-font-family);
+    font-size: 13px;
+    background-color: var(--vscode-editor-background);
+    box-sizing: border-box;
+    padding: 0 20px;
+    width: 100%;
+    color: var(--vscode-editor-foreground);
+}
+
+a[role="button"] {
+    text-decoration: none;
+    color: unset;
+    outline: none;
+}
+
+input[type="checkbox"] {
+    appearance: none;
+    width: 13px;
+    height: 13px;
+    outline: 1px solid var(--vscode-tree-inactiveIndentGuidesStroke);
+    background-color: var(--vscode-input-background);
+    accent-color: var(--vscode-input-background);
+}
+
+input[type="checkbox"]:checked {
+    appearance: revert;
+}
