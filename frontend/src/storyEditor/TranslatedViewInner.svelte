@@ -8,7 +8,7 @@
     import { translatedPreview } from "./stores";
 
     const preview = translatedPreview;
-    export let actions: IPanelAction[] = [
+    export let actions: (IPanelAction | null)[] = [
         {
             icon: "comment",
             tooltip: "Dialogue preview",

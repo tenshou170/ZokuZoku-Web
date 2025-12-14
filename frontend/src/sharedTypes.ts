@@ -36,6 +36,9 @@ export type ControllerMessage = {
     uris: { [key: string]: string }
 } | {
     type: "enableVoicePlayer"
+} | {
+    type: "loadStory",
+    story: any
 };
 
 export type StoryEditorControllerMessage = ControllerMessage | {
@@ -48,7 +51,10 @@ export interface StoryEditorConfig {
     isStoryView: boolean,
     lineSpacingMultiplier?: number,
     fontSizeMultiplier?: number,
-    lineWidthMultiplier?: number
+    lineWidthMultiplier?: number,
+    game_path?: string,
+    found?: boolean,
+    use_decryption?: boolean
 }
 
 export type EditorMessage = {

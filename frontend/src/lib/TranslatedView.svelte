@@ -7,7 +7,7 @@
 
     export let inner = TranslatedViewInner;
 
-    let actions: IPanelAction[] | undefined;
+    let actions: (IPanelAction | null)[] | undefined;
 
     $: postMessageToController({
         type: "subscribePath",

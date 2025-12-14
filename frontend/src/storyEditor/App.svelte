@@ -33,10 +33,22 @@
                 // Temporary override logic, ideally backend persists
                 const res = await api.getGameStories(manualPath);
                 stories = res.stories;
-                $config = { ...($config || {}), game_path: manualPath };
+                const defaultConfig = { noWrap: false, isStoryView: false };
+                $config = {
+                    ...defaultConfig,
+                    ...($config || {}),
+                    game_path: manualPath,
+                };
             } else {
-                $config = await api.getGameConfig();
-                if ($config.found) {
+                const defaultConfig = { noWrap: false, isStoryView: false };
+                const apiConfig = await api.getGameConfig();
+                $config = {
+                    ...defaultConfig,
+                    ...($config || {}),
+                    ...apiConfig,
+                };
+
+                if ($config?.found) {
                     const res = await api.getGameStories();
                     stories = res.stories;
                 } else {
@@ -73,16 +85,6 @@
                 if (s) openStory(s);
                 break;
             case "setTextSlotContent":
-                // updateTextSlot(message.entryPath, message.index, message.content);
-                break; // We need to import currentTextSlots, currentPath first
-                // Checking if message.entryPath matches currentPath
-                // Since this is global App, we assume the active workspace is the target.
-                // In multi-tab, we might need to check which tab is active, but stores are singletons.
-
-                // Compare paths (simple string join comparison)
-                // Note: We need a way to access the value of currentPath store here.
-                // Svelte store access: get(currentPath) or $currentPath if component.
-                // But currentPath is in ../stores.ts.
                 break;
         }
     }
