@@ -20,12 +20,56 @@
     $: lineWidth = Math.round(21 / ($config?.fontSizeMultiplier ?? 1));
     $: lineHeight = 1.5 * ($config?.lineSpacingMultiplier ?? 1);
 
-    $: displayValue = makeContentDisplayValue(value, lineWidth, $config, readonly);
+    $: displayValue = makeContentDisplayValue(
+        value,
+        lineWidth,
+        $config,
+        readonly,
+    );
+
+    import { voiceCues } from "./stores";
+    import { currentPath } from "../stores";
+
+    $: currentNodeId =
+        $currentPath && $currentPath.length > 0
+            ? $currentPath[$currentPath.length - 1]
+            : null;
+    $: voiceUrl = currentNodeId ? $voiceCues[currentNodeId] : null;
+
+    function playVoice() {
+        if (voiceUrl) {
+            new Audio(voiceUrl).play();
+        }
+    }
+
+    function handleKeydown(e: KeyboardEvent) {
+        if (e.key === "Enter" || e.key === " ") {
+            playVoice();
+        }
+    }
 </script>
 
-<div class="content" {title} on:focus on:blur on:keydown on:mousemove on:click
-    style="font-size: {fontSize}cqh; line-height: {lineHeight};">
+<div
+    class="content"
+    {title}
+    on:focus
+    on:blur
+    on:keydown
+    on:mousemove
+    on:click
+    style="font-size: {fontSize}cqh; line-height: {lineHeight};"
+>
     <ColorText content={displayValue} translated={!readonly} />
+    {#if voiceUrl}
+        <div
+            class="voice-btn codicon codicon-play"
+            role="button"
+            tabindex="0"
+            on:click|stopPropagation={playVoice}
+            on:keydown|stopPropagation={handleKeydown}
+            title="Play Voice"
+        ></div>
+    {/if}
 </div>
 
 <style>
@@ -44,5 +88,20 @@
         /*line-height: 20.51cqh;*/
         letter-spacing: -0.01515152em;
         min-height: 0;
+        position: relative;
+    }
+
+    .voice-btn {
+        position: absolute;
+        bottom: 5%;
+        right: 2%;
+        font-size: 20px; /* Use px or cqh? cqh might be better for scaling */
+        cursor: pointer;
+        color: #794016;
+        opacity: 0.7;
+    }
+    .voice-btn:hover {
+        opacity: 1;
+        transform: scale(1.1);
     }
 </style>

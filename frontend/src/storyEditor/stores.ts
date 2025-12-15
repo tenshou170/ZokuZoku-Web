@@ -22,3 +22,5 @@ export const translatedPreview = writable<PreviewType | null>(initState!.transla
 
 originalPreview.subscribe(originalPreview => storyEditorState.update(s => ({ ...s, originalPreview })));
 translatedPreview.subscribe(translatedPreview => storyEditorState.update(s => ({ ...s, translatedPreview })));
+
+export const voiceCues = writable<Record<string, string>>({});

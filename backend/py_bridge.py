@@ -98,6 +98,10 @@ def handle_query_db(params):
     if key:
         conn_str += f"&hexkey={key}"
         
+    import os
+    log_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "debug_log.txt")
+    with open(log_path, "a") as f:
+        f.write(f"DEBUG_PY_BRIDGE: Opening DB: {conn_str}\n")
     db = apsw.Connection(conn_str, flags=apsw.SQLITE_OPEN_URI | apsw.SQLITE_OPEN_READONLY)
 
     cursor = db.cursor()

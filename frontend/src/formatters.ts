@@ -54,6 +54,9 @@ export function formatStoryData(timelineData: ExtractedStoryData) {
     let prevMaleNode: IEntryTreeNode | undefined;
     let prevFemaleNode: IEntryTreeNode | undefined;
 
+    const voiceCues: [string, number][] = [];
+    let globalCueOffset = 0;
+
     // Block Processing
     for (const [i, block] of timelineData.blockList.entries()) {
         const content: IStoryTextSlot[] = [
@@ -126,10 +129,13 @@ export function formatStoryData(timelineData: ExtractedStoryData) {
             }
         }
 
+        // Voice Cue Logic
+        let cueOffset = 0;
         switch (differenceFlag) {
             case DifferenceFlag.GenderMale:
                 name += " (male trainer)";
                 updatePrevMaleNode();
+                cueOffset = 1;
                 break;
             case DifferenceFlag.GenderFemale:
                 name += " (female trainer)";
@@ -151,18 +157,27 @@ export function formatStoryData(timelineData: ExtractedStoryData) {
         };
         nodes.push(node);
 
+        const cueId = block.cueId;
+        if (cueId !== -1) {
+            voiceCues.push([id.toString(), cueId + cueOffset + globalCueOffset]);
+        }
+
         switch (differenceFlag) {
             case DifferenceFlag.GenderMale:
                 prevMaleNode = node;
                 break;
             case DifferenceFlag.GenderFemale:
                 prevFemaleNode = node;
+                if (cueId !== -1) {
+                    globalCueOffset += 1;
+                }
                 break;
         }
     }
 
     return {
         title: resTitle,
-        nodes
+        nodes,
+        voiceCues
     };
 }

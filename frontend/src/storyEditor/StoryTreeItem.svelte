@@ -13,7 +13,7 @@
     }
 
     function select() {
-        dispatch("select", node);
+        dispatch("select", { story: node });
     }
 
     // Bubble up events

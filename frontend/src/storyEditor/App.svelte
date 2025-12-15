@@ -2,17 +2,24 @@
     import Workspace from "../lib/Workspace.svelte";
     import { onMount } from "svelte";
     import type { StoryEditorControllerMessage } from "../sharedTypes";
-    import { config, originalPreview, translatedPreview } from "./stores";
+    import {
+        config,
+        originalPreview,
+        translatedPreview,
+        voiceCues,
+    } from "./stores";
     import WorkspaceInner from "./WorkspaceInner.svelte";
     import Sidebar from "./Sidebar.svelte";
     import Welcome from "./Welcome.svelte";
     import WorkspaceWrapper from "./WorkspaceWrapper.svelte";
+    import SettingsModal from "./SettingsModal.svelte";
     import * as api from "../api";
 
     // Application State
     let stories: any[] = [];
     let loading = true;
     let error: string | null = null;
+    let showSettings = false;
 
     // Tab State
     interface Tab {
@@ -32,7 +39,7 @@
             if (manualPath) {
                 // Temporary override logic, ideally backend persists
                 const res = await api.getGameStories(manualPath);
-                stories = res.stories;
+                stories = res.stories || res;
                 const defaultConfig = { noWrap: false, isStoryView: false };
                 $config = {
                     ...defaultConfig,
@@ -50,13 +57,16 @@
 
                 if ($config?.found) {
                     const res = await api.getGameStories();
-                    stories = res.stories;
+                    console.log("[App] Stories loaded:", res);
+                    // Backend returns the tree object directly now { mainStories: ..., otherStories: ... }
+                    stories = res.stories || res;
                 } else {
                     // Stay in "Welcome" state to ask for path
                 }
             }
         } catch (e: any) {
-            error = e.message;
+            console.error(e);
+            error = e.message || "Unknown error";
         } finally {
             loading = false;
         }
@@ -85,6 +95,13 @@
                 if (s) openStory(s);
                 break;
             case "setTextSlotContent":
+                break;
+            case "loadVoice":
+                // @ts-ignore
+                voiceCues.set(message.uris);
+                break;
+            case "showMessage":
+                alert(message.content);
                 break;
         }
     }
@@ -138,6 +155,9 @@
             config={$config}
             on:select={onSidebarSelect}
             on:reload={onReload}
+            on:openLocalizeDict={() =>
+                openStory({ id: "localize_dict", title: "Localize Dict" })}
+            on:openSettings={() => (showSettings = true)}
         />
     </div>
 
@@ -198,17 +218,20 @@
                 {/key}
             </div>
         {:else}
-            <!-- Welcome / Empty State -->
+            <!-- Empty State / Welcome Screen -->
             <Welcome
                 {loading}
                 {error}
                 config={$config}
                 on:load={(e) => loadData(e.detail)}
                 on:retry={() => loadData()}
+                on:openSettings={() => (showSettings = true)}
             />
         {/if}
     </div>
 </div>
+
+<SettingsModal show={showSettings} on:close={() => (showSettings = false)} />
 
 <style>
     .app-shell {

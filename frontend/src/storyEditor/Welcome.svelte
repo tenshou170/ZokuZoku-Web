@@ -77,15 +77,12 @@
             </div>
         </div>
     {:else if !config || !config.game_path}
-        <div class="manual-input">
-            <p>Game path not detected. Please enter it manually:</p>
-            <div class="input-row">
-                <input
-                    type="text"
-                    bind:value={manualPath}
-                    placeholder="/path/to/data"
-                />
-                <button on:click={load}>Connect</button>
+        <div class="manual-input center-text">
+            <p>Game path not detected. Please configure it in settings.</p>
+            <div class="row">
+                <button on:click={() => dispatch("openSettings")}
+                    >Open Settings</button
+                >
             </div>
         </div>
     {/if}

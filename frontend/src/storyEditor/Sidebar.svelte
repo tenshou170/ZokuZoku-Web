@@ -1,69 +1,25 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
     import StoryTreeItem from "./StoryTreeItem.svelte";
+    import SidebarSection from "./SidebarSection.svelte";
+    import * as api from "../api";
 
-    export let stories: any[] = [];
+    export let stories: any = {}; // backend returns { mainStories: [], otherStories: [] }
     export let config: any = null;
 
     const dispatch = createEventDispatcher();
 
-    let treeNodes: any[] = [];
+    $: mainTree = stories.mainStories || [];
+    $: otherTree = stories.otherStories || [];
 
-    $: treeNodes = buildTree(stories);
+    // Sort otherTree by id/name?
+    // Backend returns list of Categories.
 
-    function buildTree(flatStories: any[]): any[] {
-        const root: any[] = [];
-        const categoryMap = new Map<string, any>();
+    // Filter out "Event Story", "Character Story" etc if we want specific sections?
+    // VSCode has "Stories" which includes categories.
+    // Here we have "ALL STORIES" (let's put 'otherTree' here) and "MAIN STORIES" (put 'mainTree' here).
 
-        for (const story of flatStories) {
-            // Level 1: Category
-            let catName = story.category || "Uncategorized";
-            let catNode = categoryMap.get(catName);
-            if (!catNode) {
-                catNode = {
-                    type: "category",
-                    id: `cat_${catName}`,
-                    name: catName,
-                    children: [],
-                    icon: "library",
-                };
-                categoryMap.set(catName, catNode);
-                root.push(catNode);
-            }
-
-            // Level 2: Group (Optional)
-            let parentChildren = catNode.children;
-            if (story.group) {
-                let grpName = story.group;
-                let groupNode = parentChildren.find(
-                    (c: any) => c.id === `grp_${catName}_${grpName}`,
-                );
-                if (!groupNode) {
-                    groupNode = {
-                        type: "category",
-                        id: `grp_${catName}_${grpName}`,
-                        name: grpName,
-                        children: [],
-                        icon: "folder",
-                    };
-                    parentChildren.push(groupNode);
-                }
-                parentChildren = groupNode.children;
-            }
-
-            // Level 3: Leaf
-            parentChildren.push({
-                type: "entry",
-                id: story.id,
-                name: story.id,
-                path: story.path,
-                // store full story object data if needed
-                story: story,
-            });
-        }
-
-        return root;
-    }
+    $: allTree = otherTree;
 
     function onSelect(e: any) {
         dispatch("select", e.detail.story);
@@ -72,40 +28,124 @@
     function onReload() {
         dispatch("reload");
     }
+
+    // Hachimi Controls
+    async function reloadLocalized() {
+        // zokuzoku.hachimi.reloadLocalizedData -> command
+        await api.sendIpcCommand({ command: "ReloadLocalizedData" });
+    }
+
+    async function setLocalizeDir() {
+        // Need file picker. Not implemented yet.
+        alert("Not implemented in Web yet");
+    }
+
+    async function revertLocalizeDir() {
+        // Not implemented
+    }
 </script>
 
 <div class="sidebar">
-    <div class="header">
-        <span class="title">EXPLORER</span>
-        <div class="actions">
-            <button
-                class="icon-btn codicon codicon-refresh"
-                title="Reload Stories"
-                on:click={onReload}
-            ></button>
-        </div>
-    </div>
+    <div class="sidebar-title">EXPLORER</div>
 
-    {#if config && config.game_path}
-        <div class="path-info">
-            <span class="codicon codicon-link"></span>
-            <span class="path-text" title={config.game_path}
-                >{config.game_path}</span
+    <SidebarSection
+        title="ALL STORIES"
+        expanded={true}
+        actions={[{ icon: "refresh", title: "Refresh", id: "refresh" }]}
+        on:action={(e) => {
+            if (e.detail === "refresh") onReload();
+        }}
+    >
+        <div class="tree-container">
+            {#if !stories.otherStories || stories.otherStories.length === 0}
+                {#if config?.game_path}
+                    <div class="empty-msg">No stories found.</div>
+                {:else}
+                    <div class="empty-msg">Please configure game path.</div>
+                {/if}
+            {:else}
+                <ul>
+                    {#each allTree as node}
+                        <StoryTreeItem {node} on:select={onSelect} />
+                    {/each}
+                </ul>
+            {/if}
+        </div>
+    </SidebarSection>
+
+    <SidebarSection
+        title="HOME DIALOGUES"
+        actions={[{ icon: "refresh", title: "Refresh", id: "refresh" }]}
+    >
+        <div class="tree-container">
+            <div class="empty-msg">No home dialogues loaded.</div>
+        </div>
+    </SidebarSection>
+
+    <SidebarSection
+        title="MAIN STORIES"
+        actions={[{ icon: "refresh", title: "Refresh", id: "refresh" }]}
+    >
+        <div class="tree-container">
+            {#if !stories.mainStories || stories.mainStories.length === 0}
+                <div class="empty-msg">No main stories loaded.</div>
+            {:else}
+                <ul>
+                    {#each mainTree as node}
+                        <StoryTreeItem {node} on:select={onSelect} />
+                    {/each}
+                </ul>
+            {/if}
+        </div>
+    </SidebarSection>
+
+    <SidebarSection title="LOCALIZE DICT">
+        <div class="controls-container">
+            <button
+                class="control-btn"
+                on:click={() => dispatch("openLocalizeDict")}
+                >Open editor</button
             >
         </div>
-    {/if}
+    </SidebarSection>
 
-    <div class="tree-container">
-        <ul>
-            {#each treeNodes as node}
-                <StoryTreeItem {node} on:select={onSelect} />
-            {/each}
-        </ul>
+    <SidebarSection title="MDB">
+        <div class="empty-msg">Editor not implemented.</div>
+    </SidebarSection>
 
-        {#if stories.length === 0}
-            <div class="empty-msg">No stories loaded.</div>
-        {/if}
-    </div>
+    <SidebarSection
+        title="LYRICS"
+        actions={[{ icon: "refresh", title: "Refresh", id: "refresh" }]}
+    >
+        <div class="empty-msg">No lyrics loaded.</div>
+    </SidebarSection>
+
+    <SidebarSection title="HACHIMI CONTROLS">
+        <div class="controls-container">
+            <button class="control-btn" on:click={reloadLocalized}
+                >Reload localized data</button
+            >
+            <button class="control-btn" on:click={setLocalizeDir}
+                >Set translation folder</button
+            >
+            <button class="control-btn" on:click={revertLocalizeDir}
+                >Revert translation folder</button
+            >
+        </div>
+    </SidebarSection>
+
+    <div class="spacer"></div>
+
+    <SidebarSection title="SETTINGS">
+        <div class="controls-container">
+            <button
+                class="control-btn"
+                on:click={() => dispatch("openSettings")}>Open Settings</button
+            >
+        </div>
+    </SidebarSection>
+
+    <!-- Inactive / Timeline? MDB? -->
 </div>
 
 <style>
@@ -117,38 +157,23 @@
         display: flex;
         flex-direction: column;
         border-right: 1px solid var(--vscode-sideBar-border, #333);
+        overflow-y: auto; /* Allow scrolling the whole sidebar if many sections expanded */
     }
 
-    .header {
+    .sidebar-title {
         padding: 10px 15px;
         font-size: 11px;
-        font-weight: bold;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background-color: var(--vscode-sideBarSectionHeader-background);
-    }
-
-    .path-info {
-        padding: 4px 10px;
-        font-size: 11px;
-        opacity: 0.7;
-        display: flex;
-        align-items: center;
-        border-bottom: 1px solid #333;
-    }
-
-    .path-text {
-        margin-left: 5px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        font-weight: normal;
+        text-transform: uppercase;
+        color: var(--vscode-sideBarTitle-foreground, #bbbbbb);
+        display: none; /* VSCode hides the main title if using view containers? Or shows it at top? Usually "EXPLORER" is in the activity bar/header */
+        /* Let's keep it hidden to mimic the "Views" list style */
     }
 
     .tree-container {
-        flex: 1;
-        overflow-y: auto;
         padding-top: 4px;
+        max-height: 50vh; /* logical limit? or flex? */
+        overflow-y: auto;
     }
 
     ul {
@@ -157,18 +182,31 @@
     }
 
     .empty-msg {
-        padding: 20px;
+        padding: 10px 20px;
         opacity: 0.5;
-        text-align: center;
+        font-size: 13px;
     }
 
-    .icon-btn {
-        background: none;
+    .controls-container {
+        display: flex;
+        flex-direction: column;
+        padding: 10px;
+        gap: 5px;
+    }
+
+    .control-btn {
+        background-color: var(--vscode-button-background, #0e639c);
+        color: var(--vscode-button-foreground, #ffffff);
         border: none;
-        color: inherit;
+        padding: 4px 8px;
+        text-align: left;
         cursor: pointer;
     }
-    .icon-btn:hover {
-        color: var(--vscode-foreground);
+    .control-btn:hover {
+        background-color: var(--vscode-button-hoverBackground, #1177bb);
+    }
+
+    .spacer {
+        flex: 1;
     }
 </style>

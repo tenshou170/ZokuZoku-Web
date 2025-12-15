@@ -54,7 +54,9 @@ export interface StoryEditorConfig {
     lineWidthMultiplier?: number,
     game_path?: string,
     found?: boolean,
-    use_decryption?: boolean
+    use_decryption?: boolean,
+    translation_dir?: string;
+    localize_dict_dump_path?: string;
 }
 
 export type EditorMessage = {
