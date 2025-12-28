@@ -87,17 +87,28 @@ jobs:
           TAG="v$VERSION"
 
           echo "Creating release $TAG"
-          gh release create "$TAG" --draft --prerelease --title "ZokuZoku $TAG" --notes "See the assets to download this version." || true
+          gh release create "$TAG" --draft --title "ZokuZoku $TAG" --notes "See the assets to download this version." || true
 
-          # Process artifacts
-          mkdir upload
+          # Process artifacts - create distributable packages with Python files
+          mkdir -p upload
           for dir in artifacts/zokuzoku-*; do
             platform=$(basename "$dir" | sed 's/zokuzoku-//')
-            cp "$dir"/* "upload/zokuzoku-$platform"
+            pkg_dir="zokuzoku-$platform"
+            mkdir -p "$pkg_dir"
+            
+            # Copy binary
+            cp "$dir"/* "$pkg_dir/zokuzoku"
+            
             # Add .exe extension if it's windows
             if [[ "$platform" == "windows-x64" ]]; then
-               mv "upload/zokuzoku-windows-x64" "upload/zokuzoku-windows-x64.exe"
+               mv "$pkg_dir/zokuzoku" "$pkg_dir/zokuzoku.exe"
             fi
+            
+            # Copy Python bridge files
+            cp -r python "$pkg_dir/"
+            
+            # Create zip archive
+            zip -r "upload/zokuzoku-$platform.zip" "$pkg_dir"
           done
 
           echo "Uploading assets..."

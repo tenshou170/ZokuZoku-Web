@@ -19,6 +19,36 @@ async fn handle_frontend_message(
 }
 
 fn get_python_interpreter() -> String {
+    // First, try to find relative to executable (for production builds)
+    if let Ok(exe_path) = std::env::current_exe() {
+        if let Some(exe_dir) = exe_path.parent() {
+            // Check for .venv (Unix)
+            let dot_venv_bin = exe_dir.join(".venv/bin/python3");
+            if dot_venv_bin.exists() {
+                return dot_venv_bin.to_string_lossy().to_string();
+            }
+
+            // Check for venv (Unix)
+            let venv_bin = exe_dir.join("venv/bin/python3");
+            if venv_bin.exists() {
+                return venv_bin.to_string_lossy().to_string();
+            }
+
+            // Check for .venv (Windows)
+            let dot_venv_win = exe_dir.join(".venv/Scripts/python.exe");
+            if dot_venv_win.exists() {
+                return dot_venv_win.to_string_lossy().to_string();
+            }
+
+            // Check for venv (Windows)
+            let venv_win = exe_dir.join("venv/Scripts/python.exe");
+            if venv_win.exists() {
+                return venv_win.to_string_lossy().to_string();
+            }
+        }
+    }
+
+    // Fallback: try current directory (for dev builds)
     let current_dir = std::env::current_dir().unwrap_or_default();
 
     // Check for .venv (Unix)
@@ -53,10 +83,12 @@ fn run_python_script(
     command: &str,
     params: serde_json::Value,
 ) -> Result<serde_json::Value, String> {
-    // Locate python script
-    let py_script = std::env::current_dir()
-        .map_err(|e| e.to_string())?
-        .join("python/py/py_bridge.py");
+    // Locate python script relative to the executable
+    let exe_path = std::env::current_exe().map_err(|e| e.to_string())?;
+    let exe_dir = exe_path
+        .parent()
+        .ok_or_else(|| "Failed to get executable directory".to_string())?;
+    let py_script = exe_dir.join("python/py/py_bridge.py");
 
     if !py_script.exists() {
         return Err(format!("Python script not found at {:?}", py_script));
