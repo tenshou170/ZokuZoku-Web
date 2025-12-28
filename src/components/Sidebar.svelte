@@ -11,7 +11,8 @@
     import { loadRaceStoriesList } from "../raceStoryController";
     import type { RaceStoryItem } from "../raceStoryController";
 
-    let settingsExpanded = false;
+    let allStoriesExpanded = true;
+    let settingsExpanded = true;
     let lyricsExpanded = false;
     let lyricsList: LyricItem[] = [];
     let raceStoriesExpanded = false;
@@ -223,90 +224,124 @@
 
 <div class="sidebar">
     <div class="header">
-        <h3>STORIES EXPLORER</h3>
-        <button on:click={loadCategories} title="Refresh">↻</button>
+        <h3>ZOKUZOKU</h3>
+        <button on:click={loadCategories} title="Refresh">
+            <span class="codicon codicon-refresh"></span>
+        </button>
     </div>
 
-    {#if errorMsg}
-        <div class="error">{errorMsg}</div>
-    {/if}
+    <!-- ALL STORIES Section -->
+    <div
+        class="header section-header"
+        role="button"
+        tabindex="0"
+        on:click={() => (allStoriesExpanded = !allStoriesExpanded)}
+        on:keydown={(e) =>
+            (e.key === "Enter" || e.key === " ") &&
+            (allStoriesExpanded = !allStoriesExpanded)}
+        style="cursor: pointer;"
+    >
+        <h3 style="display: flex; align-items: center;">
+            <span
+                class="codicon codicon-{allStoriesExpanded
+                    ? 'chevron-down'
+                    : 'chevron-right'}"
+                style="margin-right: 5px;"
+            ></span>
+            ALL STORIES
+        </h3>
+    </div>
 
-    <ul class="tree">
-        {#each rootItems as cat}
-            <!-- Category -->
-            <li>
-                <div
-                    class="tree-item"
-                    role="button"
-                    tabindex="0"
-                    on:click={() => toggle(cat)}
-                    on:keydown={(e) =>
-                        (e.key === "Enter" || e.key === " ") && toggle(cat)}
-                >
-                    <span
-                        class="codicon codicon-{cat.expanded
-                            ? 'chevron-down'
-                            : 'chevron-right'}"
-                    ></span>
-                    <span>{cat.label}</span>
-                </div>
-                {#if cat.expanded}
-                    <ul class="sub-tree" transition:fade={{ duration: 100 }}>
-                        {#if cat.loading}<li>Loading...</li>{/if}
-                        {#each cat.children || [] as grp}
-                            <!-- Group -->
-                            <li>
-                                <div
-                                    class="tree-item group-item"
-                                    role="button"
-                                    tabindex="0"
-                                    on:click={() => toggle(grp)}
-                                    on:keydown={(e) =>
-                                        (e.key === "Enter" || e.key === " ") &&
-                                        toggle(grp)}
-                                >
-                                    <span
-                                        class="codicon codicon-{grp.expanded
-                                            ? 'chevron-down'
-                                            : 'chevron-right'}"
-                                    ></span>
-                                    <span>{grp.label}</span>
-                                </div>
-                                {#if grp.expanded}
-                                    <ul class="sub-tree">
-                                        {#if grp.loading}<li>
-                                                Loading...
-                                            </li>{/if}
-                                        {#each grp.children || [] as story}
-                                            <!-- Story -->
-                                            <li>
-                                                <div
-                                                    class="tree-item story-item"
-                                                    role="button"
-                                                    tabindex="0"
-                                                    on:click={() =>
-                                                        openStory(story.id)}
-                                                    on:keydown={(e) =>
-                                                        (e.key === "Enter" ||
-                                                            e.key === " ") &&
-                                                        openStory(story.id)}
-                                                >
-                                                    <span
-                                                        class="codicon codicon-file"
-                                                    ></span>
-                                                    <span>{story.label}</span>
-                                                </div>
-                                            </li>
-                                        {/each}
-                                    </ul>
-                                {/if}
-                            </li>
-                        {/each}
-                    </ul>
-                {/if}
-            </li>
-        {/each}
-    </ul>
+    {#if allStoriesExpanded}
+        {#if errorMsg}
+            <div class="error">{errorMsg}</div>
+        {/if}
+
+        <ul class="tree">
+            {#each rootItems as cat}
+                <!-- Category -->
+                <li>
+                    <div
+                        class="tree-item"
+                        role="button"
+                        tabindex="0"
+                        on:click={() => toggle(cat)}
+                        on:keydown={(e) =>
+                            (e.key === "Enter" || e.key === " ") && toggle(cat)}
+                    >
+                        <span
+                            class="codicon codicon-{cat.expanded
+                                ? 'chevron-down'
+                                : 'chevron-right'}"
+                        ></span>
+                        <span>{cat.label}</span>
+                    </div>
+                    {#if cat.expanded}
+                        <ul
+                            class="sub-tree"
+                            transition:fade={{ duration: 100 }}
+                        >
+                            {#if cat.loading}<li>Loading...</li>{/if}
+                            {#each cat.children || [] as grp}
+                                <!-- Group -->
+                                <li>
+                                    <div
+                                        class="tree-item group-item"
+                                        role="button"
+                                        tabindex="0"
+                                        on:click={() => toggle(grp)}
+                                        on:keydown={(e) =>
+                                            (e.key === "Enter" ||
+                                                e.key === " ") &&
+                                            toggle(grp)}
+                                    >
+                                        <span
+                                            class="codicon codicon-{grp.expanded
+                                                ? 'chevron-down'
+                                                : 'chevron-right'}"
+                                        ></span>
+                                        <span>{grp.label}</span>
+                                    </div>
+                                    {#if grp.expanded}
+                                        <ul class="sub-tree">
+                                            {#if grp.loading}<li>
+                                                    Loading...
+                                                </li>{/if}
+                                            {#each grp.children || [] as story}
+                                                <!-- Story -->
+                                                <li>
+                                                    <div
+                                                        class="tree-item story-item"
+                                                        role="button"
+                                                        tabindex="0"
+                                                        on:click={() =>
+                                                            openStory(story.id)}
+                                                        on:keydown={(e) =>
+                                                            (e.key ===
+                                                                "Enter" ||
+                                                                e.key ===
+                                                                    " ") &&
+                                                            openStory(story.id)}
+                                                    >
+                                                        <span
+                                                            class="codicon codicon-file"
+                                                        ></span>
+                                                        <span
+                                                            >{story.label}</span
+                                                        >
+                                                    </div>
+                                                </li>
+                                            {/each}
+                                        </ul>
+                                    {/if}
+                                </li>
+                            {/each}
+                        </ul>
+                    {/if}
+                </li>
+            {/each}
+        </ul>
+    {/if}
 
     <div
         class="header section-header"
@@ -325,7 +360,7 @@
                     : 'chevron-right'}"
                 style="margin-right: 5px;"
             ></span>
-            MDB EDITORS
+            MDB
         </h3>
     </div>
     {#if mdbExpanded}
@@ -369,7 +404,7 @@
                     : 'chevron-right'}"
                 style="margin-right: 5px;"
             ></span>
-            LYRICS EXPLORER
+            LYRICS
         </h3>
     </div>
     {#if lyricsExpanded}
@@ -418,7 +453,7 @@
                     : 'chevron-right'}"
                 style="margin-right: 5px;"
             ></span>
-            RACE STORIES EXPLORER
+            RACE STORIES
         </h3>
     </div>
     {#if raceStoriesExpanded}
@@ -467,32 +502,47 @@
                     : 'chevron-right'}"
                 style="margin-right: 5px;"
             ></span>
-            SETTINGS
+            HACHIMI CONTROLS
         </h3>
     </div>
     {#if settingsExpanded}
         <div
-            style="padding: 10px; display: flex; flex-direction: column; gap: 8px;"
+            style="padding: 10px; display: flex; flex-direction: column; gap: 4px;"
         >
-            <div title={$appConfig.gamePath || "Not set"}>
-                <button class="settings-btn" on:click={selectGameFolder}>
-                    <span class="codicon codicon-folder"></span>
-                    {#if $appConfig.gamePath}
-                        Change Game Data
-                    {:else}
-                        Select Game Data
-                    {/if}
-                </button>
-            </div>
+            <button
+                class="settings-btn"
+                on:click={() => {
+                    loadCategories();
+                    loadLyrics();
+                    loadRaceStories();
+                }}
+            >
+                Reload localized data
+            </button>
 
-            <div title={$appConfig.translationPath || "Not set"}>
-                <button class="settings-btn" on:click={selectTranslationFolder}>
-                    <span class="codicon codicon-book"></span>
-                    {#if $appConfig.translationPath}
-                        Change Tran. Path
-                    {:else}
-                        Select Tran. Path
-                    {/if}
+            <button class="settings-btn" on:click={selectTranslationFolder}>
+                {#if $appConfig.translationPath}
+                    Change translation folder
+                {:else}
+                    Set translation folder
+                {/if}
+            </button>
+
+            <button
+                class="settings-btn"
+                on:click={() =>
+                    appConfig.update((c) => ({ ...c, translationPath: "" }))}
+            >
+                Revert translation folder
+            </button>
+
+            <div style="margin-top: 10px; opacity: 0.6; font-size: 10px;">
+                Game Data: {$appConfig.gamePath || "Not set"}
+                <button
+                    on:click={selectGameFolder}
+                    style="text-decoration: underline; padding: 0; margin-left: 5px; color: var(--vscode-textLink-foreground);"
+                >
+                    Change
                 </button>
             </div>
         </div>
@@ -566,20 +616,19 @@
         font-size: 11px;
     }
     .settings-btn {
-        display: flex;
-        align-items: center;
+        display: block;
         width: 100%;
-        padding: 4px;
+        padding: 6px 12px;
         background-color: var(--vscode-button-background);
         color: var(--vscode-button-foreground);
         border: none;
+        border-radius: 2px;
         cursor: pointer;
         font-size: 11px;
+        text-align: center;
+        margin-bottom: 2px;
     }
     .settings-btn:hover {
         background-color: var(--vscode-button-hoverBackground);
-    }
-    .settings-btn .codicon {
-        margin-right: 5px;
     }
 </style>
